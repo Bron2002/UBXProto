@@ -29,32 +29,33 @@
 #include "ubx.h"
 #include "malloc.h"
 #include "memory.h"
+#include "ubxcheck.h"
 
-void fletcherChecksum(unsigned char* buffer, int size, unsigned char* checkSumA, unsigned char* checkSumB)
+void fletcherChecksum(unsigned char *buffer, int size, unsigned char *checkSumA, unsigned char *checkSumB)
 {
     int i = 0;
     *checkSumA = 0;
     *checkSumB = 0;
-    for(; i < size; i++)
+    for (; i < size; i++)
     {
         *checkSumA += buffer[i];
         *checkSumB += *checkSumA;
     }
 }
 
-extern void clearUBXMsgBuffer(const UBXMsgBuffer* buffer)
+extern void clearUBXMsgBuffer(const UBXMsgBuffer *buffer)
 {
     free(buffer->data);
 }
 
-void completeMsg(UBXMsgBuffer* buffer, int payloadSize)
+void completeMsg(UBXMsgBuffer *buffer, int payloadSize)
 {
-    unsigned char* checkSumA = (unsigned char*)(buffer->data + UBX_HEADER_SIZE  + payloadSize);
-    unsigned char* checkSumB = (unsigned char*)(buffer->data + UBX_HEADER_SIZE  + payloadSize + 1);
-    fletcherChecksum((unsigned char*)(buffer->data + sizeof(UBX_PREAMBLE)), payloadSize + 4, checkSumA, checkSumB);
+    unsigned char *checkSumA = (unsigned char *) (buffer->data + UBX_HEADER_SIZE + payloadSize);
+    unsigned char *checkSumB = (unsigned char *) (buffer->data + UBX_HEADER_SIZE + payloadSize + 1);
+    fletcherChecksum((unsigned char *) (buffer->data + sizeof(UBX_PREAMBLE)), payloadSize + 4, checkSumA, checkSumB);
 }
 
-void initMsg(UBXMsg* msg, int payloadSize, UBXMessageClass msgClass, UBXMessageId msgId)
+void initMsg(UBXMsg *msg, int payloadSize, UBXMessageClass msgClass, UBXMessageId msgId)
 {
     msg->preamble = htobe16(UBX_PREAMBLE);
     msg->hdr.msgClass = msgClass;
@@ -66,28 +67,28 @@ UBXMsgBuffer createBuffer(int payloadSize)
 {
     UBXMsgBuffer buffer = {0, 0};
     buffer.size = UBX_HEADER_SIZE + payloadSize + UBX_CHECKSUM_SIZE;
-    buffer.data = (char*)malloc(buffer.size);
+    buffer.data = (char *) malloc(buffer.size);
     memset(buffer.data, 0, buffer.size);
     return buffer;
 }
 
-UBXMsgBuffer getAID_ALPSRV(UBXMsg* clientMgs, const UBXAlpFileInfo *fileInfo)
+UBXMsgBuffer getAID_ALPSRV(UBXMsg *clientMgs, const UBXAlpFileInfo *fileInfo)
 {
     int requestedAlpSize = (clientMgs->payload.AID_ALPSRV.size << 1);
     int alpMsgSize = 0;
     int payloadSize = 0;
     UBXMsgBuffer buffer;
-    UBXMsg* msg = 0;
-    if(fileInfo->dataSize < (clientMgs->payload.AID_ALPSRV.offset + requestedAlpSize))
+    UBXMsg *msg = 0;
+    if (fileInfo->dataSize < (clientMgs->payload.AID_ALPSRV.offset + requestedAlpSize))
     {
         requestedAlpSize = fileInfo->dataSize - clientMgs->payload.AID_ALPSRV.offset - 1;
     }
     alpMsgSize = sizeof(UBXAID_ALPSRV);
     payloadSize = alpMsgSize + requestedAlpSize;
     buffer = createBuffer(payloadSize);
-    msg = (UBXMsg*) buffer.data;
+    msg = (UBXMsg *) buffer.data;
 
-    if(requestedAlpSize < 0)
+    if (requestedAlpSize < 0)
     {
         return buffer;
     }
@@ -102,7 +103,8 @@ UBXMsgBuffer getAID_ALPSRV(UBXMsg* clientMgs, const UBXAlpFileInfo *fileInfo)
     msg->payload.AID_ALPSRV.id1 = clientMgs->payload.AID_ALPSRV.id1;
     msg->payload.AID_ALPSRV.id2 = clientMgs->payload.AID_ALPSRV.id2;
     msg->payload.AID_ALPSRV.id3 = clientMgs->payload.AID_ALPSRV.id3;
-    memcpy(buffer.data + UBX_HEADER_SIZE + alpMsgSize, fileInfo->alpData + msg->payload.AID_ALPSRV.offset, requestedAlpSize);
+    memcpy(buffer.data + UBX_HEADER_SIZE + alpMsgSize, fileInfo->alpData + msg->payload.AID_ALPSRV.offset,
+           requestedAlpSize);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -110,8 +112,8 @@ UBXMsgBuffer getAID_ALPSRV(UBXMsg* clientMgs, const UBXAlpFileInfo *fileInfo)
 UBXMsgBuffer getCFG_MSG_POLL(UBXMessageClass msgClass, UBXMessageId msgId)
 {
     int payloadSize = sizeof(UBXCFG_MSG_POLL);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_MSG);
     msg->payload.CFG_MSG_POLL.msgClass = msgClass;
     msg->payload.CFG_MSG_POLL.msgId = msgId;
@@ -122,8 +124,8 @@ UBXMsgBuffer getCFG_MSG_POLL(UBXMessageClass msgClass, UBXMessageId msgId)
 UBXMsgBuffer getCFG_MSG_RATE(UBXMessageClass msgClass, UBXMessageId msgId, UBXU1_t rate)
 {
     int payloadSize = sizeof(UBXCFG_MSG_RATE);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_MSG);
     msg->payload.CFG_MSG_RATE.msgClass = msgClass;
     msg->payload.CFG_MSG_RATE.msgId = msgId;
@@ -135,12 +137,12 @@ UBXMsgBuffer getCFG_MSG_RATE(UBXMessageClass msgClass, UBXMessageId msgId, UBXU1
 UBXMsgBuffer getCFG_MSG_RATES(UBXMessageClass msgClass, UBXMessageId msgId, UBXU1_t rate[])
 {
     int payloadSize = sizeof(UBXCFG_MSG_RATES);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_MSG);
     msg->payload.CFG_MSG_RATES.msgClass = msgClass;
     msg->payload.CFG_MSG_RATES.msgId = msgId;
-    memcpy(msg->payload.CFG_MSG_RATES.rate, rate, 6*sizeof(UBXU1_t));
+    memcpy(msg->payload.CFG_MSG_RATES.rate, rate, 6 * sizeof(UBXU1_t));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -148,8 +150,8 @@ UBXMsgBuffer getCFG_MSG_RATES(UBXMessageClass msgClass, UBXMessageId msgId, UBXU
 UBXMsgBuffer getCFG_RST(int mode, UBXU2_t mask)
 {
     int payloadSize = sizeof(UBXCFG_RST);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RST);
     msg->payload.CFG_RST.resetMode = mode;
     msg->payload.CFG_RST.navBBRMask = mask;
@@ -160,8 +162,8 @@ UBXMsgBuffer getCFG_RST(int mode, UBXU2_t mask)
 UBXMsgBuffer getCFG_RST_OPT(int mode, UBXBBRSpecialSets special)
 {
     int payloadSize = sizeof(UBXCFG_RST);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RST);
     msg->payload.CFG_RST.resetMode = mode;
     msg->payload.CFG_RST.navBBRMask = special;
@@ -172,8 +174,8 @@ UBXMsgBuffer getCFG_RST_OPT(int mode, UBXBBRSpecialSets special)
 UBXMsgBuffer getCFG_TP5_POLL_OPT(UBXCFGTimepulses tpIdx)
 {
     int payloadSize = sizeof(UBXCFG_TP5_POLL_OPT);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_TP5);
     msg->payload.CFG_TP5_POLL_OPT.tpIdx = tpIdx;
     completeMsg(&buffer, payloadSize);
@@ -181,12 +183,12 @@ UBXMsgBuffer getCFG_TP5_POLL_OPT(UBXCFGTimepulses tpIdx)
 }
 
 UBXMsgBuffer getCFG_TP5(UBXCFGTimepulses tpIdx, UBXI2_t antCableDelay, UBXI2_t rfGroupDelay,
-                               UBXU4_t freqPeriod, UBXU4_t freqPeriodLock, UBXU4_t pulseLenRatio,
-                               UBXU4_t pulseLenRatioLock, UBXU4_t userConfigDelay, UBXU4_t flags)
+                        UBXU4_t freqPeriod, UBXU4_t freqPeriodLock, UBXU4_t pulseLenRatio,
+                        UBXU4_t pulseLenRatioLock, UBXU4_t userConfigDelay, UBXU4_t flags)
 {
     int payloadSize = sizeof(UBXCFG_TP5);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_TP5);
     msg->payload.CFG_TP5.tpIdx = tpIdx;
     msg->payload.CFG_TP5.antCableDelay = antCableDelay;
@@ -204,8 +206,8 @@ UBXMsgBuffer getCFG_TP5(UBXCFGTimepulses tpIdx, UBXI2_t antCableDelay, UBXI2_t r
 UBXMsgBuffer getAID_ALM_POLL()
 {
     int payloadSize = 0;
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_ALP);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -214,8 +216,8 @@ UBXMsgBuffer getAID_ALM_POLL()
 UBXMsgBuffer getAID_ALM_POLL_OPT(UBXU1_t svid)
 {
     int payloadSize = sizeof(UBXAID_ALM_POLL_OPT);
-    UBXMsgBuffer buffer  = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsgBuffer buffer = createBuffer(payloadSize);
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_ALP);
     msg->payload.AID_ALM_POLL_OPT.svid = svid;
     completeMsg(&buffer, payloadSize);
@@ -226,7 +228,7 @@ UBXMsgBuffer getAID_ALM(UBXU4_t svid, UBXU4_t week)
 {
     int payloadSize = sizeof(UBXAID_ALM);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_ALM);
     msg->payload.AID_ALM.svid = svid;
     msg->payload.AID_ALM.week = week;
@@ -238,25 +240,25 @@ UBXMsgBuffer getAID_ALM_OPT(UBXU4_t svid, UBXU4_t week, UBXU4_t dwrd[8])
 {
     int payloadSize = sizeof(UBXAID_ALM_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_ALM);
     msg->payload.AID_ALM_OPT.svid = svid;
     msg->payload.AID_ALM_OPT.week = week;
-    memcpy(msg->payload.AID_ALM_OPT.dwrd, dwrd, 8*sizeof(UBXU4_t));
+    memcpy(msg->payload.AID_ALM_OPT.dwrd, dwrd, 8 * sizeof(UBXU4_t));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getAID_ALP_POLL(UBXU4_t predTow,
-                                    UBXU4_t predDur,
-                                    UBXI4_t age,
-                                    UBXU2_t predWno,
-                                    UBXU2_t almWno,
-                                    UBXU1_t svs)
+                             UBXU4_t predDur,
+                             UBXI4_t age,
+                             UBXU2_t predWno,
+                             UBXU2_t almWno,
+                             UBXU1_t svs)
 {
     int payloadSize = sizeof(UBXAID_ALP_POLL);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_ALP);
     msg->payload.AID_ALP_POLL.predTow = predTow;
     msg->payload.AID_ALP_POLL.predDur = predDur;
@@ -272,20 +274,20 @@ UBXMsgBuffer getAID_ALP_END()
 {
     int payloadSize = sizeof(UBXAID_ALP_END);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_ALP);
     msg->payload.AID_ALP_END.dummy = 0xAA;
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
-UBXMsgBuffer getAID_ALP(UBXU2_t* chunk, int chunkSize)
+UBXMsgBuffer getAID_ALP(UBXU2_t *chunk, int chunkSize)
 {
     int payloadSize = chunkSize;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_ALP);
-    memcpy(((char*)&(msg->payload)) + sizeof(UBXAID_ALP), chunk, chunkSize);
+    memcpy(((char *) &(msg->payload)) + sizeof(UBXAID_ALP), chunk, chunkSize);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -294,7 +296,7 @@ UBXMsgBuffer getAID_AOP_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_AOP);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -304,7 +306,7 @@ UBXMsgBuffer getAID_AOP_POLL_OPT(UBXU1_t svid)
 {
     int payloadSize = sizeof(UBXAID_AOP_POLL_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_AOP);
     msg->payload.AID_AOP_POLL_OPT.svid = svid;
     completeMsg(&buffer, payloadSize);
@@ -315,25 +317,26 @@ UBXMsgBuffer getAID_AOP(UBXU1_t svid, UBXU1_t data[59])
 {
     int payloadSize = sizeof(UBXAID_AOP);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_AOP);
     msg->payload.AID_AOP.svid = svid;
-    memcpy(msg->payload.AID_AOP.data, data, 59*sizeof(UBXU1_t));
+    memcpy(msg->payload.AID_AOP.data, data, 59 * sizeof(UBXU1_t));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
-UBXMsgBuffer getAID_AOP_OPT(UBXU1_t svid, UBXU1_t data[59], UBXU1_t optional0[48], UBXU1_t optional1[48], UBXU1_t optional2[48])
+UBXMsgBuffer
+getAID_AOP_OPT(UBXU1_t svid, UBXU1_t data[59], UBXU1_t optional0[48], UBXU1_t optional1[48], UBXU1_t optional2[48])
 {
     int payloadSize = sizeof(UBXAID_AOP_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_AOP);
     msg->payload.AID_AOP_OPT.svid = svid;
-    memcpy(msg->payload.AID_AOP_OPT.data, data, 59*sizeof(UBXU1_t));
-    memcpy(msg->payload.AID_AOP_OPT.optional0, optional0, 48*sizeof(UBXU1_t));
-    memcpy(msg->payload.AID_AOP_OPT.optional1, optional1, 48*sizeof(UBXU1_t));
-    memcpy(msg->payload.AID_AOP_OPT.optional2, optional2, 48*sizeof(UBXU1_t));
+    memcpy(msg->payload.AID_AOP_OPT.data, data, 59 * sizeof(UBXU1_t));
+    memcpy(msg->payload.AID_AOP_OPT.optional0, optional0, 48 * sizeof(UBXU1_t));
+    memcpy(msg->payload.AID_AOP_OPT.optional1, optional1, 48 * sizeof(UBXU1_t));
+    memcpy(msg->payload.AID_AOP_OPT.optional2, optional2, 48 * sizeof(UBXU1_t));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -342,7 +345,7 @@ UBXMsgBuffer getAID_DATA_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_DATA);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -352,7 +355,7 @@ UBXMsgBuffer getAID_EPH_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_EPH);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -362,7 +365,7 @@ UBXMsgBuffer getAID_EPH_POLL_OPT(UBXU1_t svid)
 {
     int payloadSize = sizeof(UBXAID_EPH_POLL_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_EPH);
     msg->payload.AID_EPH_POLL_OPT.svid = svid;
     completeMsg(&buffer, payloadSize);
@@ -373,7 +376,7 @@ UBXMsgBuffer getAID_EPH(UBXU4_t svid, UBXU4_t how)
 {
     int payloadSize = sizeof(UBXAID_EPH);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_EPH);
     msg->payload.AID_EPH.svid = svid;
     msg->payload.AID_EPH.how = how;
@@ -385,13 +388,13 @@ UBXMsgBuffer getAID_EPH_OPT(UBXU4_t svid, UBXU4_t how, UBXU4_t sf1d[8], UBXU4_t 
 {
     int payloadSize = sizeof(UBXAID_EPH_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_EPH);
     msg->payload.AID_EPH_OPT.svid = svid;
     msg->payload.AID_EPH_OPT.how = how;
-    memcpy(msg->payload.AID_EPH_OPT.sf1d, sf1d, 8*sizeof(UBXU4_t));
-    memcpy(msg->payload.AID_EPH_OPT.sf2d, sf2d, 8*sizeof(UBXU4_t));
-    memcpy(msg->payload.AID_EPH_OPT.sf3d, sf3d, 8*sizeof(UBXU4_t));
+    memcpy(msg->payload.AID_EPH_OPT.sf1d, sf1d, 8 * sizeof(UBXU4_t));
+    memcpy(msg->payload.AID_EPH_OPT.sf2d, sf2d, 8 * sizeof(UBXU4_t));
+    memcpy(msg->payload.AID_EPH_OPT.sf3d, sf3d, 8 * sizeof(UBXU4_t));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -400,23 +403,23 @@ UBXMsgBuffer getAID_HUI_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_HUI);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getAID_HUI(UBXI4_t health, UBXR4_t utcA0, UBXR4_t utcA1,
-                               UBXI4_t utcTOW, UBXI2_t utcWNT, UBXI2_t utcLS,
-                               UBXI2_t utcWNF, UBXI2_t utcDN, UBXI2_t utcLSF,
-                               UBXI2_t utcSpare, UBXR4_t klobA0, UBXR4_t klobA1,
-                               UBXR4_t klobA2, UBXR4_t klobA3, UBXR4_t klobB0,
-                               UBXR4_t klobB1, UBXR4_t klobB2, UBXR4_t klobB3,
-                               UBXX2_t flags)
+                        UBXI4_t utcTOW, UBXI2_t utcWNT, UBXI2_t utcLS,
+                        UBXI2_t utcWNF, UBXI2_t utcDN, UBXI2_t utcLSF,
+                        UBXI2_t utcSpare, UBXR4_t klobA0, UBXR4_t klobA1,
+                        UBXR4_t klobA2, UBXR4_t klobA3, UBXR4_t klobB0,
+                        UBXR4_t klobB1, UBXR4_t klobB2, UBXR4_t klobB3,
+                        UBXX2_t flags)
 {
     int payloadSize = sizeof(UBXAID_HUI);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_HUI);
     msg->payload.AID_HUI.health = health;
     msg->payload.AID_HUI.utcA0 = utcA0;
@@ -445,29 +448,29 @@ UBXMsgBuffer getAID_INI_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_INI);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getAID_INI(UBXI1_t ecefXOrLat,
-                               UBXI1_t ecefYOrLat,
-                               UBXI1_t ecefZOrLat,
-                               UBXU1_t posAcc,
-                               UBXI1_t tmCfg,
-                               UBXU2_t wnoOrDate,
-                               UBXU4_t towOrDate,
-                               UBXI4_t towNs,
-                               UBXU4_t tAccMS,
-                               UBXU4_t tAccNS,
-                               UBXI4_t clkDOrFreq,
-                               UBXU4_t clkDAccOrFreqAcc,
-                               UBXX4_t flags)
+                        UBXI1_t ecefYOrLat,
+                        UBXI1_t ecefZOrLat,
+                        UBXU1_t posAcc,
+                        UBXI1_t tmCfg,
+                        UBXU2_t wnoOrDate,
+                        UBXU4_t towOrDate,
+                        UBXI4_t towNs,
+                        UBXU4_t tAccMS,
+                        UBXU4_t tAccNS,
+                        UBXI4_t clkDOrFreq,
+                        UBXU4_t clkDAccOrFreqAcc,
+                        UBXX4_t flags)
 {
     int payloadSize = sizeof(UBXAID_INI);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassAID, UBXMsgIdAID_INI);
     msg->payload.AID_INI.ecefXOrLat = ecefXOrLat;
     msg->payload.AID_INI.ecefYOrLat = ecefYOrLat;
@@ -490,7 +493,7 @@ UBXMsgBuffer getCFG_ANT(UBXX2_t flags, UBXANTPins pins)
 {
     int payloadSize = sizeof(UBXCFG_ANT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_ANT);
     msg->payload.CFG_ANT.flags = flags;
     msg->payload.CFG_ANT.pins = pins;
@@ -502,7 +505,7 @@ UBXMsgBuffer getCFG_ANT_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_ANT);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -512,7 +515,7 @@ UBXMsgBuffer getCFG_CFG(UBXX4_t clearMask, UBXX4_t saveMask, UBXX4_t loadMask)
 {
     int payloadSize = sizeof(UBXCFG_CFG);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_CFG);
     msg->payload.CFG_CFG.clearMask = clearMask;
     msg->payload.CFG_CFG.saveMask = saveMask;
@@ -525,7 +528,7 @@ UBXMsgBuffer getCFG_CFG_OPT(UBXX4_t clearMask, UBXX4_t saveMask, UBXX4_t loadMas
 {
     int payloadSize = sizeof(UBXCFG_CFG_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_CFG);
     msg->payload.CFG_CFG_OPT.clearMask = clearMask;
     msg->payload.CFG_CFG_OPT.saveMask = saveMask;
@@ -535,11 +538,13 @@ UBXMsgBuffer getCFG_CFG_OPT(UBXX4_t clearMask, UBXX4_t saveMask, UBXX4_t loadMas
     return buffer;
 }
 
-UBXMsgBuffer getCFG_DAT_IN(UBXR8_t majA, UBXR8_t flat, UBXR4_t dX, UBXR4_t dY, UBXR4_t dZ, UBXR4_t rotX, UBXR4_t rotY, UBXR4_t rotZ, UBXR4_t scale)
+UBXMsgBuffer
+getCFG_DAT_IN(UBXR8_t majA, UBXR8_t flat, UBXR4_t dX, UBXR4_t dY, UBXR4_t dZ, UBXR4_t rotX, UBXR4_t rotY, UBXR4_t rotZ,
+              UBXR4_t scale)
 {
     int payloadSize = sizeof(UBXCFG_DAT_IN);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_CFG);
     msg->payload.CFG_DAT_IN.majA = majA;
     msg->payload.CFG_DAT_IN.flat = flat;
@@ -558,7 +563,7 @@ UBXMsgBuffer getCFG_DAT_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_DAT);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -568,27 +573,28 @@ UBXMsgBuffer getCFG_GNSS_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_GNSS);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getCFG_GNSS(UBXU1_t msgVer,
-                                UBXU1_t numTrkChHw,
-                                UBXU1_t numTrkChUse,
-                                UBXU1_t numConfigBlocks,
-                                UBXCFG_GNSS_PART* gnssPart)
+                         UBXU1_t numTrkChHw,
+                         UBXU1_t numTrkChUse,
+                         UBXU1_t numConfigBlocks,
+                         UBXCFG_GNSS_PART *gnssPart)
 {
-    int payloadSize = sizeof(UBXCFG_GNSS) + numConfigBlocks*sizeof(UBXCFG_GNSS_PART);
+    int payloadSize = sizeof(UBXCFG_GNSS) + numConfigBlocks * sizeof(UBXCFG_GNSS_PART);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_GNSS);
     msg->payload.CFG_GNSS.msgVer = msgVer;
     msg->payload.CFG_GNSS.numTrkChHw = numTrkChHw;
     msg->payload.CFG_GNSS.numTrkChUse = numTrkChUse;
     msg->payload.CFG_GNSS.numConfigBlocks = numConfigBlocks;
-    memcpy(((char*)&(msg->payload.CFG_GNSS)) + sizeof(UBXCFG_GNSS), gnssPart, numConfigBlocks*sizeof(UBXCFG_GNSS_PART));
+    memcpy(((char *) &(msg->payload.CFG_GNSS)) + sizeof(UBXCFG_GNSS), gnssPart,
+           numConfigBlocks * sizeof(UBXCFG_GNSS_PART));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -597,20 +603,20 @@ UBXMsgBuffer getCFG_INF_POLL(UBXU1_t protocolId)
 {
     int payloadSize = sizeof(UBXCFG_INF_POLL);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_INF);
     msg->payload.CFG_INF_POLL.protocolId = protocolId;
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
-UBXMsgBuffer getCFG_INF(UBXCFG_INF_PART* infPart, int infPartCount)
+UBXMsgBuffer getCFG_INF(UBXCFG_INF_PART *infPart, int infPartCount)
 {
-    int payloadSize = sizeof(UBXCFG_INF_PART)*infPartCount;
+    int payloadSize = sizeof(UBXCFG_INF_PART) * infPartCount;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_INF);
-    memcpy(&(msg->payload.CFG_INF), infPart, infPartCount*sizeof(UBXCFG_INF_PART));
+    memcpy(&(msg->payload.CFG_INF), infPart, infPartCount * sizeof(UBXCFG_INF_PART));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -619,18 +625,18 @@ UBXMsgBuffer getCFG_ITFM_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_ITFM);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getCFG_ITFM(UBXITFMConfig config,
-                                UBXITFMConfig2 config2)
+                         UBXITFMConfig2 config2)
 {
     int payloadSize = sizeof(UBXCFG_ITFM);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_ITFM);
     msg->payload.CFG_ITFM.config = config;
     msg->payload.CFG_ITFM.config2 = config2;
@@ -642,22 +648,22 @@ UBXMsgBuffer getCFG_LOGFILTER_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_LOGFILTER);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getCFG_LOGFILTER(UBXU1_t version,
-                                     UBXX1_t flags,
-                                     UBXU2_t minIterval,
-                                     UBXU2_t timeThreshold,
-                                     UBXU2_t speedThreshold,
-                                     UBXU4_t positionThreshold)
+                              UBXX1_t flags,
+                              UBXU2_t minIterval,
+                              UBXU2_t timeThreshold,
+                              UBXU2_t speedThreshold,
+                              UBXU4_t positionThreshold)
 {
     int payloadSize = sizeof(UBXCFG_LOGFILTER);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_LOGFILTER);
     msg->payload.CFG_LOGFILTER.version = version;
     msg->payload.CFG_LOGFILTER.flags = flags;
@@ -673,30 +679,30 @@ UBXMsgBuffer getCFG_NAV5_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_NAV5);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getCFG_NAV5(UBXX2_t mask,
-                                UBXNAV5Model dynModel,
-                                UBXNAV5FixMode fixMode,
-                                UBXI4_t fixedAlt,
-                                UBXU4_t fixedAltVar,
-                                UBXI1_t minElev,
-                                UBXU2_t pDop,
-                                UBXU2_t tDop,
-                                UBXU2_t pAcc,
-                                UBXU2_t tAcc,
-                                UBXU1_t staticHoldThresh,
-                                UBXU1_t dgpsTimeOut,
-                                UBXU1_t cnoThreshNumSVs,
-                                UBXU1_t cnoThresh)
+                         UBXNAV5Model dynModel,
+                         UBXNAV5FixMode fixMode,
+                         UBXI4_t fixedAlt,
+                         UBXU4_t fixedAltVar,
+                         UBXI1_t minElev,
+                         UBXU2_t pDop,
+                         UBXU2_t tDop,
+                         UBXU2_t pAcc,
+                         UBXU2_t tAcc,
+                         UBXU1_t staticHoldThresh,
+                         UBXU1_t dgpsTimeOut,
+                         UBXU1_t cnoThreshNumSVs,
+                         UBXU1_t cnoThresh)
 {
     int payloadSize = sizeof(UBXCFG_NAV5);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_NAV5);
     msg->payload.CFG_NAV5.mask = mask;
     msg->payload.CFG_NAV5.dynModel = dynModel;
@@ -723,26 +729,26 @@ UBXMsgBuffer getCFG_NAVX5_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_NAVX5);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getCFG_NAVX5(UBXU2_t version,
-                                 UBXX2_t mask1,
-                                 UBXU1_t minSVs,
-                                 UBXU1_t maxSVs,
-                                 UBXU1_t minCNO,
-                                 UBXU1_t iniFix3D,
-                                 UBXU2_t wknRollover,
-                                 UBXU1_t usePPP,
-                                 UBXU1_t aopCFG,
-                                 UBXU1_t aopOrbMaxErr)
+                          UBXX2_t mask1,
+                          UBXU1_t minSVs,
+                          UBXU1_t maxSVs,
+                          UBXU1_t minCNO,
+                          UBXU1_t iniFix3D,
+                          UBXU2_t wknRollover,
+                          UBXU1_t usePPP,
+                          UBXU1_t aopCFG,
+                          UBXU1_t aopOrbMaxErr)
 {
     int payloadSize = sizeof(UBXCFG_NAVX5);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_NAVX5);
     msg->payload.CFG_NAVX5.version = version;
     msg->payload.CFG_NAVX5.mask1 = mask1;
@@ -778,24 +784,24 @@ UBXMsgBuffer getCFG_NMEA_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_NMEA);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getCFG_NMEA(UBXX1_t filter,
-                                UBXU1_t nmeaVersion,
-                                UBXU1_t numSV,
-                                UBXX1_t flags,
-                                UBXX4_t gnssToFilter,
-                                UBXNMEASVNumbering svNumbering,
-                                UBXNMEATalkerIds mainTalkerId,
-                                UBXNMEAGSVTalkerIds gsvTalkerId)
+                         UBXU1_t nmeaVersion,
+                         UBXU1_t numSV,
+                         UBXX1_t flags,
+                         UBXX4_t gnssToFilter,
+                         UBXNMEASVNumbering svNumbering,
+                         UBXNMEATalkerIds mainTalkerId,
+                         UBXNMEAGSVTalkerIds gsvTalkerId)
 {
     int payloadSize = sizeof(UBXCFG_NMEA);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_NMEA);
     msg->payload.CFG_NMEA.filter = filter;
     msg->payload.CFG_NMEA.nmeaVersion = nmeaVersion;
@@ -811,13 +817,13 @@ UBXMsgBuffer getCFG_NMEA(UBXX1_t filter,
 }
 
 UBXMsgBuffer getCFG_NVS(UBXX4_t clearMask,
-                               UBXX4_t saveMask,
-                               UBXX4_t loadMask,
-                               UBXX1_t deviceMask)
+                        UBXX4_t saveMask,
+                        UBXX4_t loadMask,
+                        UBXX1_t deviceMask)
 {
     int payloadSize = sizeof(UBXCFG_NVS);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_NVS);
     msg->payload.CFG_NVS.clearMask = clearMask;
     msg->payload.CFG_NVS.saveMask = saveMask;
@@ -831,17 +837,19 @@ UBXMsgBuffer getCFG_PM2_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_PM2);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
-UBXMsgBuffer getCFG_PM2(UBXCFG_PM2Flags flags, UBXU4_t updatePeriod, UBXU4_t searchPeriod, UBXU4_t gridOffset, UBXU2_t onTime, UBXU2_t minAcqTime)
+UBXMsgBuffer
+getCFG_PM2(UBXCFG_PM2Flags flags, UBXU4_t updatePeriod, UBXU4_t searchPeriod, UBXU4_t gridOffset, UBXU2_t onTime,
+           UBXU2_t minAcqTime)
 {
     int payloadSize = sizeof(UBXCFG_PM2);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_PM2);
     msg->payload.CFG_PM2.flags = flags;
     msg->payload.CFG_PM2.updatePeriod = updatePeriod;
@@ -857,7 +865,7 @@ UBXMsgBuffer getCFG_PRT_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_PRT);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -867,7 +875,7 @@ UBXMsgBuffer getCFG_PRT_POLL_OPT(UBXU1_t portId)
 {
     int payloadSize = sizeof(UBXCFG_PRT_POLL_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_PRT);
     msg->payload.CFG_PRT_POLL_OPT.portId = portId;
     completeMsg(&buffer, payloadSize);
@@ -906,7 +914,7 @@ UBXMsgBuffer getCFG_RATE_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RATE);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -916,7 +924,7 @@ UBXMsgBuffer getCFG_RATE(UBXU2_t measRate, UBXU2_t navRate, UBXU2_t timeRef)
 {
     int payloadSize = sizeof(UBXCFG_RATE);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RATE);
     msg->payload.CFG_RATE.measRate = measRate;
     msg->payload.CFG_RATE.navRate = navRate;
@@ -925,14 +933,14 @@ UBXMsgBuffer getCFG_RATE(UBXU2_t measRate, UBXU2_t navRate, UBXU2_t timeRef)
     return buffer;
 }
 
-UBXMsgBuffer getCFG_RINV(UBXX1_t flags, UBXU1_t* data, int dataSize)
+UBXMsgBuffer getCFG_RINV(UBXX1_t flags, UBXU1_t *data, int dataSize)
 {
-    int payloadSize = sizeof(UBXCFG_RINV) + dataSize*sizeof(UBXU1_t);
+    int payloadSize = sizeof(UBXCFG_RINV) + dataSize * sizeof(UBXU1_t);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RINV);
     msg->payload.CFG_RINV.flags = flags;
-    memcpy(((char*)&(msg->payload.CFG_RINV)) + sizeof(UBXCFG_RINV), data, dataSize*sizeof(UBXU1_t));
+    memcpy(((char *) &(msg->payload.CFG_RINV)) + sizeof(UBXCFG_RINV), data, dataSize * sizeof(UBXU1_t));
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
@@ -941,7 +949,7 @@ UBXMsgBuffer getCFG_RINV_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RINV);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -951,7 +959,7 @@ UBXMsgBuffer getCFG_RXM(UBXU1_t lpMode)
 {
     int payloadSize = sizeof(UBXCFG_RXM);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RXM);
     msg->payload.CFG_RXM.reserved1 = 8;
     msg->payload.CFG_RXM.lpMode = lpMode;
@@ -963,7 +971,7 @@ UBXMsgBuffer getCFG_RXM_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_RXM);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -973,7 +981,7 @@ UBXMsgBuffer getCFG_SBAS(UBXX1_t mode, UBXX1_t usage, UBXU1_t maxSBAS, UBXX1_t s
 {
     int payloadSize = sizeof(UBXCFG_SBAS);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_SBAS);
     msg->payload.CFG_SBAS.mode = mode;
     msg->payload.CFG_SBAS.usage = usage;
@@ -988,7 +996,7 @@ UBXMsgBuffer getCFG_SBAS_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_SBAS);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -998,7 +1006,7 @@ UBXMsgBuffer getCFG_TP5_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_TP5);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -1008,23 +1016,23 @@ UBXMsgBuffer getCFG_USB_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassCFG, UBXMsgIdCFG_USB);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getCFG_USB(UBXU2_t vendorId,
-                               UBXU2_t productId,
-                               UBXU2_t powerConsumption,
-                               UBXX2_t flags,
-                               UBXCH_t* vendorString,
-                               UBXCH_t* productString,
-                               UBXCH_t* serialNumber)
+                        UBXU2_t productId,
+                        UBXU2_t powerConsumption,
+                        UBXX2_t flags,
+                        UBXCH_t *vendorString,
+                        UBXCH_t *productString,
+                        UBXCH_t *serialNumber)
 {
     int payloadSize = sizeof(UBXCFG_USB);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     int vendorStringSize = 0;
     int productStringSize = 0;
     int serialNumberSize = 0;
@@ -1035,13 +1043,13 @@ UBXMsgBuffer getCFG_USB(UBXU2_t vendorId,
     msg->payload.CFG_USB.reserved2 = 1;
     msg->payload.CFG_USB.powerConsumption = powerConsumption;
     msg->payload.CFG_USB.flags = flags;
-    vendorStringSize = strlen(vendorString)>32?32:strlen(vendorString);
+    vendorStringSize = strlen(vendorString) > 32 ? 32 : strlen(vendorString);
     memcpy(msg->payload.CFG_USB.vendorString, vendorString, vendorStringSize);
 
-    productStringSize = strlen(productString)>32?32:strlen(productString);
+    productStringSize = strlen(productString) > 32 ? 32 : strlen(productString);
     memcpy(msg->payload.CFG_USB.productString, productString, productStringSize);
 
-    serialNumberSize = strlen(serialNumber)>32?32:strlen(serialNumber);
+    serialNumberSize = strlen(serialNumber) > 32 ? 32 : strlen(serialNumber);
     memcpy(msg->payload.CFG_USB.serialNumber, serialNumber, serialNumberSize);
 
     completeMsg(&buffer, payloadSize);
@@ -1052,7 +1060,7 @@ UBXMsgBuffer getLOG_CREATE(UBXX1_t logCfg, UBXU1_t logSize, UBXU4_t userDefinedS
 {
     int payloadSize = sizeof(UBXLOG_CREATE);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassLOG, UBXMsgIdLOG_CREATE);
     msg->payload.LOG_CREATE.version = 0;
     msg->payload.LOG_CREATE.logCfg = logCfg;
@@ -1067,7 +1075,7 @@ UBXMsgBuffer getLOG_ERASE()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassLOG, UBXMsgIdLOG_ERASE);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -1077,7 +1085,7 @@ UBXMsgBuffer getLOG_FINDTIME_IN(UBXU2_t year, UBXU1_t month, UBXU1_t day, UBXU1_
 {
     int payloadSize = sizeof(UBXLOG_FINDTIME_IN);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassLOG, UBXMsgIdLOG_FINDTIME);
     msg->payload.LOG_FINDTIME_IN.version = 0;
     msg->payload.LOG_FINDTIME_IN.type = 0;
@@ -1095,19 +1103,19 @@ UBXMsgBuffer getLOG_INFO_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassLOG, UBXMsgIdLOG_INFO);
     completeMsg(&buffer, payloadSize);
     return buffer;
 }
 
 UBXMsgBuffer getLOG_RETRIEVE(UBXU4_t startNumber,
-                                    UBXU4_t entryCount,
-                                    UBXU1_t version)
+                             UBXU4_t entryCount,
+                             UBXU1_t version)
 {
     int payloadSize = sizeof(UBXLOG_RETRIEVE);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassLOG, UBXMsgIdLOG_RETRIEVE);
     msg->payload.LOG_RETRIEVE.startNumber = startNumber;
     msg->payload.LOG_RETRIEVE.entryCount = entryCount;
@@ -1116,11 +1124,11 @@ UBXMsgBuffer getLOG_RETRIEVE(UBXU4_t startNumber,
     return buffer;
 }
 
-UBXMsgBuffer getLOG_STRING(UBXCH_t* str)
+UBXMsgBuffer getLOG_STRING(UBXCH_t *str)
 {
     int payloadSize = strlen(str);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassLOG, UBXMsgIdLOG_STRING);
     memcpy(&(msg->payload.LOG_STRING), str, payloadSize);
     completeMsg(&buffer, payloadSize);
@@ -1131,7 +1139,7 @@ UBXMsgBuffer getMON_VER_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassMON, UBXMsgIdMON_VER);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -1141,7 +1149,7 @@ UBXMsgBuffer getRXM_ALM_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassRXM, UBXMsgIdRXM_ALM);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -1151,7 +1159,7 @@ UBXMsgBuffer getRXM_ALM_POLL_OPT(UBXU1_t svid)
 {
     int payloadSize = sizeof(UBXRXM_ALM_POLL_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassRXM, UBXMsgIdRXM_ALM);
     msg->payload.RXM_ALM_POLL_OPT.svid = svid;
     completeMsg(&buffer, payloadSize);
@@ -1162,7 +1170,7 @@ UBXMsgBuffer getRXM_EPH_POLL()
 {
     int payloadSize = 0;
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassRXM, UBXMsgIdRXM_EPH);
     completeMsg(&buffer, payloadSize);
     return buffer;
@@ -1172,7 +1180,7 @@ UBXMsgBuffer getRXM_EPH_POLL_OPT(UBXU1_t svid)
 {
     int payloadSize = sizeof(UBXRXM_EPH_POLL_OPT);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassRXM, UBXMsgIdRXM_ALM);
     msg->payload.RXM_ALM_POLL_OPT.svid = svid;
     completeMsg(&buffer, payloadSize);
@@ -1183,7 +1191,7 @@ UBXMsgBuffer getRXM_PMREQ(UBXU4_t duration, UBXX4_t flags)
 {
     int payloadSize = sizeof(UBXRXM_PMREQ);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassRXM, UBXMsgIdRXM_PMREQ);
     msg->payload.RXM_PMREQ.duration = duration;
     msg->payload.RXM_PMREQ.flags = flags;
@@ -1192,23 +1200,46 @@ UBXMsgBuffer getRXM_PMREQ(UBXU4_t duration, UBXX4_t flags)
 }
 
 UBXMsgBuffer getRXM_SVSI(UBXU4_t iTOW,
-                                UBXI2_t week,
-                                UBXU1_t numVis,
-                                UBXU1_t numSV,
-                                UBXRXM_SVSI_PART* svsiPart,
-                                int svsiPartCount)
+                         UBXI2_t week,
+                         UBXU1_t numVis,
+                         UBXU1_t numSV,
+                         UBXRXM_SVSI_PART *svsiPart,
+                         int svsiPartCount)
 {
-    int payloadSize = sizeof(UBXRXM_SVSI) + svsiPartCount*sizeof(UBXRXM_SVSI_PART);
+    int payloadSize = sizeof(UBXRXM_SVSI) + svsiPartCount * sizeof(UBXRXM_SVSI_PART);
     UBXMsgBuffer buffer = createBuffer(payloadSize);
-    UBXMsg* msg = (UBXMsg*)buffer.data;
+    UBXMsg *msg = (UBXMsg *) buffer.data;
     initMsg(msg, payloadSize, UBXMsgClassRXM, UBXMsgIdRXM_SVSI);
     msg->payload.RXM_SVSI.iTOW = iTOW;
     msg->payload.RXM_SVSI.week = week;
     msg->payload.RXM_SVSI.numVis = numVis;
     msg->payload.RXM_SVSI.numSV = numSV;
-    memcpy(((char*)&(msg->payload.RXM_SVSI)) + sizeof(UBXRXM_SVSI), svsiPart, svsiPartCount*sizeof(UBXRXM_SVSI_PART));
+    memcpy(((char *) &(msg->payload.RXM_SVSI)) + sizeof(UBXRXM_SVSI), svsiPart,
+           svsiPartCount * sizeof(UBXRXM_SVSI_PART));
     completeMsg(&buffer, payloadSize);
     return buffer;
+}
+
+UBXCheckResult UBXCheckMessage(uint8_t *buf, uint16_t len)
+{
+    uint8_t ck_a = 0;
+    uint8_t ck_b = 0;
+
+    UBXMsg *msg = ((UBXMsg *) buf);
+
+    if (len < UBX_HEADER_SIZE + UBX_CHECKSUM_SIZE ||
+        msg->hdr.length + UBX_HEADER_SIZE + UBX_CHECKSUM_SIZE > len)
+        return UBXCheck_WrongLength;
+
+    if (msg->preamble != UBX_PREAMBLE)
+        return UBXCheck_WrongPreamble;
+
+    fletcherChecksum(buf, msg->hdr.length, &ck_a, &ck_b);
+
+    if (*(uint8_t*) (msg + UBX_HEADER_SIZE + msg->hdr.length) != ck_a ||
+        *(uint8_t*) (msg + UBX_HEADER_SIZE + msg->hdr.length + 1) != ck_b)
+        return UBXCheck_WrongChecksum;
+    return UBXCheck_OK;
 }
 
 /*!

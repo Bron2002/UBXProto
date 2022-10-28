@@ -33,5 +33,6 @@
 #include "ubxmon.h"
 #include "ubxrxm.h"
 #include "ubxutils.h"
+#include "ubxcheck.h"
 
 #endif // UBLOX_H
