@@ -51,6 +51,7 @@
 //#define UBX_IO_PORTS_NUM 6
 //#endif
 //#endif
+#undef USB
 
 #if defined (__linux__)
 typedef u_int8_t  UBXU1_t;
