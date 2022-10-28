@@ -122,7 +122,7 @@
 #   include <arch/arm/vxbAccessArchLib.h>
 #else
 
-#	error platform not supported
+//#	error platform not supported
 
 #endif
 
