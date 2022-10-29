@@ -83,7 +83,7 @@ typedef char           UBXCH_t;
 
 static const int UBX_CHECKSUM_SIZE = 2;
 static const int UBX_HEADER_SIZE = 6;
-static const UBXU2_t UBX_PREAMBLE = 0xB562;
+static const UBXU2_t UBX_PREAMBLE = 0x62B5;
 
 typedef enum
 {
