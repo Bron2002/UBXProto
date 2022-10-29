@@ -23,4 +23,6 @@ typedef enum
  */
 UBXCheckResult UBXCheckMessage(uint8_t *buf, uint16_t len);
 
+void completeMsg(UBXMsgBuffer *buffer, int payloadSize);
+
 #endif // UBXCHECK_H
