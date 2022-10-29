@@ -57,7 +57,7 @@ void completeMsg(UBXMsgBuffer *buffer, int payloadSize)
 
 void initMsg(UBXMsg *msg, int payloadSize, UBXMessageClass msgClass, UBXMessageId msgId)
 {
-    msg->preamble = htobe16(UBX_PREAMBLE);
+    msg->preamble = (UBX_PREAMBLE);
     msg->hdr.msgClass = msgClass;
     msg->hdr.msgId = msgId;
     msg->hdr.length = payloadSize;
@@ -1234,10 +1234,11 @@ UBXCheckResult UBXCheckMessage(uint8_t *buf, uint16_t len)
     if (msg->preamble != UBX_PREAMBLE)
         return UBXCheck_WrongPreamble;
 
-    fletcherChecksum(buf, msg->hdr.length, &ck_a, &ck_b);
+    fletcherChecksum(buf + sizeof(UBX_PREAMBLE), msg->hdr.length + UBX_HEADER_SIZE - sizeof(UBX_PREAMBLE),
+                     &ck_a, &ck_b);
 
-    if (*(uint8_t*) (msg + UBX_HEADER_SIZE + msg->hdr.length) != ck_a ||
-        *(uint8_t*) (msg + UBX_HEADER_SIZE + msg->hdr.length + 1) != ck_b)
+    if ((*(uint8_t*) (buf + UBX_HEADER_SIZE + msg->hdr.length)) != ck_a ||
+            (*(uint8_t*) (buf + UBX_HEADER_SIZE + msg->hdr.length + 1)) != ck_b)
         return UBXCheck_WrongChecksum;
     return UBXCheck_OK;
 }
