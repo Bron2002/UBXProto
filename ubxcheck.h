@@ -5,6 +5,7 @@
 #ifndef UBXCHECK_H
 #define UBXCHECK_H
 
+#include <stdint-gcc.h>
 
 typedef enum
 {
