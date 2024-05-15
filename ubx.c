@@ -56,7 +56,7 @@ void completeMsg(UBXMsgBuffer* buffer, int payloadSize)
 
 void initMsg(UBXMsg* msg, int payloadSize, UBXMessageClass msgClass, UBXMessageId msgId)
 {
-    msg->preamble = htobe16(UBX_PREAMBLE);
+    msg->preamble = (UBX_PREAMBLE);
     msg->hdr.msgClass = msgClass;
     msg->hdr.msgId = msgId;
     msg->hdr.length = payloadSize;

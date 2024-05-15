@@ -1675,8 +1675,18 @@ typedef struct
 {
     UBXX1_t gnssFixOk:1;
     UBXX1_t diffSoln:1;
-    UBXX1_t psmState:3; //See UBXPVTPSMStates to fill this field
+    UBXX1_t psmState:3;//See UBXPVTPSMStates to fill this field
+    UBXX1_t headVehValid: 1;
+    UBXX1_t carrSoln:2;
 } UBXPVTFlags;
+
+typedef struct
+{
+    UBXX1_t :5;
+    UBXX1_t confirmedAvai: 1;
+    UBXX1_t confirmedDate: 1;
+    UBXX1_t confirmedTime: 1;
+} UBXPVTFlags2;
 
 typedef struct {
     UBXU4_t iTOW;
@@ -1691,7 +1701,7 @@ typedef struct {
     UBXI4_t nano;
     UBXU1_t fixType; //See UBXGPSFix to fill this field
     UBXPVTFlags flags;
-    UBXU1_t reserved1;
+    UBXPVTFlags2 flags2;
     UBXU1_t numSV;
     UBXI4_t lon;
     UBXI4_t lat;

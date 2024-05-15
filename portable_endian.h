@@ -122,8 +122,8 @@
 #   include <arch/arm/vxbAccessArchLib.h>
 #else
 
-#	error platform not supported
-
+//#	error platform not supported
+//#include "arm"
 #endif
 
 #endif //#ifndef PORTABLE_ENDIAN_H__
