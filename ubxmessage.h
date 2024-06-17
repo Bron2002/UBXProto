@@ -1688,6 +1688,13 @@ typedef struct
     UBXX1_t confirmedTime: 1;
 } UBXPVTFlags2;
 
+typedef struct
+{
+    UBXU1_t invalidLlh: 1;
+    UBXU1_t lastCorrectionAge: 4;
+    UBXU1_t :3;
+} UBXPVTFlags3;
+
 typedef struct {
     UBXU4_t iTOW;
     UBXU2_t year;
@@ -1717,7 +1724,7 @@ typedef struct {
     UBXU4_t sAcc;
     UBXU4_t headingAcc;
     UBXU2_t pDOP;
-    UBXX2_t reserved2;
+    UBXPVTFlags3 flags3;
     UBXU4_t reserved3;
 } UBXNAV_PVT;
 
